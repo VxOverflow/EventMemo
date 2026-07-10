@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Souvenirs — Memora</title>
+  </head>
+  <body>
+    <header>
+      <a href="dashboard.html">Memora</a>
+      <nav>
+        <a href="dashboard.html">Tableau de bord</a
+        ><a href="event.html">Événements</a
+        ><a href="souvenir.html" aria-current="page">Souvenirs</a
+        ><a href="profil.html">Profil</a
+        ><button class="theme-toggle" type="button">Thème</button>
+      </nav>
+    </header>
+    <main>
+      <h1>Souvenirs</h1>
+      <form id="filters-form">
+        <label for="event-filter">Événement</label
+        ><select id="event-filter" name="event_id">
+          <option value="">Tous les événements</option></select
+        ><label for="sort-filter">Trier par</label
+        ><select id="sort-filter" name="sort">
+          <option value="date_desc">Plus récents</option>
+          <option value="date_asc">Plus anciens</option>
+          <option value="guest_asc">Nom de l'invité (A–Z)</option></select
+        ><button>Filtrer</button>
+      </form>
+      <p id="list-message" role="status"></p>
+      <section id="souvenirs-list" aria-live="polite">
+        <p>Chargement…</p>
+      </section>
+      <nav id="pagination" aria-label="Pagination"></nav>
+    </main>
+    <template id="souvenir-template"
+      ><article class="souvenir-card">
+        <h2 class="guest-name"></h2>
+        <time class="souvenir-date"></time>
+        <p class="souvenir-event"></p>
+        <blockquote class="souvenir-content"></blockquote></article
+    ></template>
+    <script src="assets/js/theme.js"></script>
+    <script src="assets/js/souvenirs.js"></script>
+  </body>
+</html>

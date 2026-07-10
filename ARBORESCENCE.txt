@@ -1,0 +1,95 @@
+Contexte : je développe "GoldBook", un livre d'or numérique pour agents événementiels,
+en HTML/CSS/JS vanilla (frontend) + PHP (backend API JSON) + MySQL. Le frontend est 100%
+HTML statique, toute donnée dynamique passe par fetch()/FormData vers des endpoints PHP.
+
+Arborescence actuelle du projet (à respecter, ne rien renommer) :
+GoldBook/
+- contribuer.html, dashboard.html, event.html, souvenir.html, tarif.html
+- login.html, register.html, verify-otp.html, forgot-password.html, reset-password.html
+- profil.html, index.html
+- api/ (db.php, db.sql, auth/, back-office/, dashboard/, events/, notifications/,
+  paiements/, souvenirs/)
+- assets/ (css/, images/, js/)
+- vues-back-office/ (dashboard.html, login.html, users.html)
+
+Voici les évolutions à appliquer, en te basant sur le cahier des charges ci-joint
+(charges.md) :
+
+1. STOCKAGE DES MÉDIAS UTILISATEURS
+   - Créer un dossier /uploads/ à la racine (photos/, audios/, videos/, chacun avec
+     sous-dossiers par année), séparé de assets/images/ qui ne contient que les visuels
+     statiques du site. Ajouter un .htaccess dans /uploads/ désactivant l'exécution PHP
+     (php_flag engine off).
+
+2. BASE DE DONNÉES (api/db.sql)
+   - Ajouter/mettre à jour la table `souvenir_media` (id, souvenir_id,
+     type ENUM('photo','audio','video'), url, duree_secondes, taille_octets,
+     date_creation).
+   - Rendre `souvenirs.contenu` nullable.
+   - Ajouter `espace_max_mo` à `plans`.
+   - Ajouter la table `admins` (id, nom, email UNIQUE, mot_de_passe, date_creation),
+     séparée de `users`.
+   - Script de migration en ALTER TABLE si les tables existent déjà, sans perte de
+     données.
+
+3. PAGE DE CONTRIBUTION (contribuer.html + assets/js/contribuer.js + nouveau
+   assets/js/recorder.js)
+   - Choix du type de souvenir : texte, photo, audio, vidéo.
+   - Enregistrement audio/vidéo via MediaRecorder (getUserMedia), plafond de durée
+     (60s vidéo, 120s audio), aperçu live pour la vidéo, relecture avant envoi.
+   - Upload photo(s) classique via <input type="file" accept="image/*" multiple>.
+   - Envoi en multipart/form-data vers api/souvenirs/create.php.
+   - Barre de progression pendant l'upload.
+
+4. BACKEND (api/souvenirs/create.php)
+   - Réception de $_FILES pour photos[], audio, video.
+   - Validation du vrai type MIME (finfo_file), jamais seulement l'extension.
+   - Limites : photo 5 Mo (jpg/jpeg/png/webp), audio 15 Mo (webm/mp3/ogg/wav),
+     vidéo 80 Mo (webm/mp4).
+   - Nom de fichier aléatoire (bin2hex(random_bytes(16))), jamais le nom d'origine.
+   - Stockage dans /uploads/{photos|audios|videos}/{année}/.
+   - Une ligne souvenir_media par fichier accepté.
+
+5. PAGE SOUVENIRS (souvenir.html + assets/js/souvenirs.js)
+   - Galerie photo (lightbox), lecteur <audio controls>, lecteur <video controls>.
+   - Filtre par type de média en plus du filtre par événement.
+
+6. DASHBOARD ORGANISATEUR (dashboard.html + assets/js/dashboard.js)
+   - Statistique "espace de stockage utilisé" + répartition des souvenirs par type.
+
+7. MODE CLAIR / SOMBRE (assets/css/theme.css + assets/js/theme.js)
+   - Variables CSS selon la palette du cahier des charges (section 2) : mode clair
+     ivoire/bronze/bleu nuit, mode sombre charbon/or/bleu poudré (copier les hex du
+     §2.1 et §2.2).
+   - Toggle sur <html data-theme>, sauvegarde localStorage, lecture avant affichage
+     pour éviter le flash.
+   - Appliquer à toutes les pages existantes.
+
+8. BACK-OFFICE ADMINISTRATEUR (nouveau, voir §9 du cahier des charges)
+   - Créer la table `admins` (voir point 2).
+   - api/back-office/login-admin.php : authentifie contre `admins`, démarre une
+     session admin totalement séparée de celle des organisateurs (clé de session
+     différente, ex. $_SESSION['admin_id']).
+   - api/back-office/logout-admin.php : à créer.
+   - api/back-office/dashboard-admin.php : statistiques globales (tous organisateurs
+     confondus) — nb organisateurs, nb événements, nb souvenirs par type, stockage
+     total utilisé.
+   - api/back-office/users.php : à créer — GET (liste paginée + recherche des
+     organisateurs), PATCH (suspendre/réactiver, changer le plan), DELETE (supprimer
+     un compte organisateur et son contenu en cascade).
+   - vues-back-office/login.html, dashboard.html, users.html : brancher sur ces
+     endpoints via fetch(), même logique que le reste du frontend.
+   - Sécurité : chaque endpoint de api/back-office/ vérifie
+     isset($_SESSION['admin_id']) — ne jamais réutiliser la vérification user_id des
+     organisateurs. Pas d'endpoint d'inscription admin public. Rate limiting renforcé
+     sur login-admin.php.
+
+Contraintes générales à respecter :
+- Ne rien casser dans les fonctionnalités déjà en place (auth OTP WhatsApp, création
+  d'événement, QR code, dashboard organisateur).
+- Toujours utiliser des requêtes préparées PDO.
+- Toujours valider côté serveur en plus du JS.
+- Respecter les noms de fichiers/dossiers existants (assets/, vues-back-office/,
+  paiements/, event.html, souvenir.html, tarif.html) sans les renommer.
+- Me signaler clairement tout fichier créé ou modifié, et tout endpoint dont la
+  signature change.

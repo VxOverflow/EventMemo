@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Profil — Memora</title>
+  </head>
+  <body>
+    <header>
+      <a href="dashboard.html">Memora</a>
+      <nav>
+        <a href="dashboard.html">Tableau de bord</a
+        ><a href="event.html">Événements</a><a href="souvenir.html">Souvenirs</a
+        ><a href="profil.html" aria-current="page">Profil</a
+        ><button class="theme-toggle" type="button">Thème</button>
+      </nav>
+    </header>
+    <main>
+      <h1>Profil et paramètres</h1>
+      <p id="form-message" role="alert" hidden></p>
+      <section>
+        <h2>Informations personnelles</h2>
+        <form id="profile-form" action="" method="post">
+          <label for="nom">Nom</label
+          ><input id="nom" name="nom" maxlength="100" required /><label
+            for="email"
+            >E-mail</label
+          ><input
+            id="email"
+            name="email"
+            type="email"
+            maxlength="150"
+            required
+          /><button>Enregistrer les modifications</button>
+        </form>
+      </section>
+      <section>
+        <h2>Modifier le mot de passe</h2>
+        <form id="password-form" action="api/users/password.php" method="post">
+          <label for="current_password">Mot de passe actuel</label
+          ><input
+            id="current_password"
+            name="current_password"
+            type="password"
+            autocomplete="current-password"
+            required
+          /><label for="new_password">Nouveau mot de passe</label
+          ><input
+            id="new_password"
+            name="new_password"
+            type="password"
+            autocomplete="new-password"
+            minlength="8"
+            required
+          /><button>Modifier le mot de passe</button>
+        </form>
+      </section>
+      <section>
+        <h2>Apparence</h2>
+        <button class="theme-toggle" type="button">
+          Basculer entre le mode clair et sombre
+        </button>
+      </section>
+      <section>
+        <h2>Abonnement</h2>
+        <p>Plan actuel : <strong id="current-plan">—</strong></p>
+        <p id="plan-expiry"></p>
+        <a href="tarif.html">Voir les offres</a>
+        <div id="billing-history">
+          <h3>Historique de facturation</h3>
+          <p>Chargement…</p>
+        </div>
+      </section>
+      <button id="logout-button" type="button">Se déconnecter</button>
+      <button id="logout-button" type="button"></button>
+    </main>
+    <script src="assets/js/theme.js"></script>
+    <script src="assets/js/profile.js"></script>
+  </body>
+</html>

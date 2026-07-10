@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Inscription — Memora</title>
+  </head>
+  <body>
+    <main>
+      <a href="index.html">Memora</a>
+      <h1>Créer un compte</h1>
+      <p id="form-message" role="alert" hidden></p>
+      <form id="register-form" action="" method="post">
+        <label for="nom">Nom complet</label
+        ><input
+          id="nom"
+          name="nom"
+          autocomplete="name"
+          maxlength="100"
+          required
+        /><label for="email">E-mail</label
+        ><input
+          id="email"
+          name="email"
+          type="email"
+          autocomplete="email"
+          maxlength="150"
+          required
+        /><label for="telephone">Téléphone WhatsApp (pour recevoir directement les qr codes et les liens)</label
+        ><input
+          id="telephone"
+          name="telephone"
+          type="tel"
+          autocomplete="tel"
+          placeholder="+229XXXXXXXX"
+          required
+        /><label for="mot_de_passe">Mot de passe</label
+        ><input
+          id="mot_de_passe"
+          name="mot_de_passe"
+          type="password"
+          autocomplete="new-password"
+          minlength="8"
+          required
+        /><button type="submit">Créer mon compte</button>
+      </form>
+      <p>Déjà inscrit ? <a href="login.html">Se connecter</a></p>
+    </main>
+    <script src="assets/js/auth.js"></script>
+  </body>
+</html>

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="fr">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Tableau de bord — Memora</title>
+    </head>
+    <body>
+        <header>
+            <a href="dashboard.html">Memora</a>
+            <nav>
+                <a href="dashboard.html" aria-current="page">Tableau de bord</a>
+                <a href="event.html">Événements</a>
+                <a href="souvenir.html">Souvenirs</a>
+                <a href="profil.html">Profil</a>
+                <button class="theme-toggle" type="button">Thème</button>
+            </nav>
+        </header>
+        <main>
+            <h1>Bonjour, <span id="user-name">Organisateur</span></h1>
+            <section aria-label="Statistiques">
+                <article>
+                    <h2 id="nb-souvenirs">—</h2>
+                    <p>Souvenirs reçus</p>
+                </article>
+                <article>
+                    <h2 id="nb-invites">—</h2>
+                    <p>Invités contributeurs</p>
+                </article>
+                <article>
+                    <h2 id="nb-evenements">—</h2>
+                    <p>Événements organisés</p>
+                </article>
+            </section>
+            <section>
+                <h2>Derniers souvenirs</h2>
+                <div id="recent-souvenirs">
+                    <p>Chargement…</p>
+                </div>
+                <a href="souvenir.html">Voir tous les souvenirs</a>
+            </section>
+        </main>
+        <script src="assets/js/theme.js"></script>
+        <script src="assets/js/dashboard.js"></script>
+    </body>
+</html>

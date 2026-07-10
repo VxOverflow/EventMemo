@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Événements — Memora</title>
+  </head>
+  <body>
+    <header>
+      <a href="dashboard.html">Memora</a>
+      <nav>
+        <a href="dashboard.html">Tableau de bord</a
+        ><a href="event.html" aria-current="page">Événements</a
+        ><a href="souvenir.html">Souvenirs</a><a href="profil.html">Profil</a
+        ><button class="theme-toggle" type="button">Thème</button>
+      </nav>
+    </header>
+    <main>
+      <h1>Mes événements</h1>
+      <section>
+        <h2>Créer un événement</h2>
+        <p id="form-message" role="alert" hidden></p>
+        <form id="event-form" action="" method="post">
+
+          <label for="nom">Nom de l'événement</label
+          ><input id="nom" name="nom" maxlength="150" required /><label
+            for="date_evenement"
+            >Date</label
+          ><input
+            id="date_evenement"
+            name="date_evenement"
+            type="date"
+            required
+          /><label for="lieu">Lieu <small>(facultatif)</small></label
+          ><input id="lieu" name="lieu" maxlength="150" /><label
+            for="description"
+            >Description <small>(facultatif)</small></label
+          ><textarea id="description" name="description" rows="4"></textarea
+          ><button>Créer l'événement</button>
+        </form>
+      </section>
+      <section>
+        <h2>Vos événements</h2>
+        <div id="events-list"><p>Chargement…</p></div>
+      </section>
+    </main>
+    <template id="event-template"
+      ><article class="event-card">
+        <h3 class="event-name"></h3>
+        <p class="event-date"></p>
+        <p class="event-location"></p>
+        <a class="public-link" target="_blank" rel="noopener">Lien public</a>
+        <div class="qrcode"></div>
+        <button class="close-event" type="button">Clore</button
+        ><button class="resend-whatsapp" type="button">
+          Renvoyer sur WhatsApp</button
+        ><a class="view-souvenirs">Voir les souvenirs</a>
+      </article></template
+    >
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="assets/js/theme.js"></script>
+    <script src="assets/js/events.js"></script>
+  </body>
+</html>

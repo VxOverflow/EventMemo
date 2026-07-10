@@ -1,6 +1,6 @@
-# EventMemo 📖✨
+# Memora 📖✨
 
-**EventMemo** est une alternative numérique au livre d'or physique, destinée aux agents événementiels. Elle permet de créer des événements, de collecter les souvenirs laissés par les invités via un simple lien ou QR code, et de les consulter depuis un dashboard.
+**Memora** est une alternative numérique au livre d'or physique, destinée aux agents événementiels. Elle permet de créer des événements, de collecter les souvenirs laissés par les invités via un simple lien ou QR code, et de les consulter depuis un dashboard.
 
 ## ✨ Fonctionnalités
 
@@ -21,7 +21,7 @@
 - **Base de données** : MySQL / MariaDB
 - **Notifications** : API WhatsApp (Twilio sandbox en développement)
 
-Le frontend ne contient que des pages HTML statiques ; toute donnée dynamique transite via des appels AJAX vers des endpoints PHP qui répondent en JSON. Voir [`cahier-des-charges.md`](./cahier-des-charges-livre-or-numerique.md) pour le détail complet de l'architecture et du modèle de données.
+Le frontend ne contient que des pages HTML statiques ; toute donnée dynamique transite via des appels AJAX vers des endpoints PHP qui répondent en JSON. Voir [`charges.md`](./charges.md) pour le détail complet de l'architecture et du modèle de données.
 
 ## 📁 Structure du projet
 
@@ -57,8 +57,8 @@ Le frontend ne contient que des pages HTML statiques ; toute donnée dynamique t
 ### Étapes
 
 ```bash
-git clone https://github.com/<ton-user>/eventmemo.git
-cd eventmemo
+git clone https://github.com/<ton-user>/Memora.git
+cd Memora
 ```
 
 1. Créer la base de données et importer le schéma :

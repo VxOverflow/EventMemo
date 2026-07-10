@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="fr">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#FAF8F3">
+        <title>Laisser un souvenir — Memora</title>
+        <script>
+            document.documentElement.dataset.theme = localStorage.getItem('Memora-theme') || 'light';
+        </script>
+        <link rel="stylesheet" href="assets/css/theme.css">
+        <link rel="stylesheet" href="assets/css/style.css">
+    </head>
+    <body>
+        <main>
+            <header class="public-header">
+                <a href="index.html" aria-label="Accueil Memora">Memora</a>
+                <button class="theme-toggle" type="button" aria-label="Changer de thème">
+                    Thème
+                </button>
+            </header>
+
+            <section id="event-intro">
+                <p>Bienvenue dans le livre d'or de</p>
+                <h1 id="event-name">Chargement…</h1>
+                <p id="event-description"></p>
+            </section>
+
+            <section id="contribution-section" hidden>
+                <h2>Laissez votre souvenir</h2>
+                <p id="form-message" role="alert" hidden></p>
+
+                <form id="contribution-form" novalidate>
+                    <input id="event-token" name="token" type="hidden">
+
+                    <div class="form-field">
+                        <label for="nom">Votre nom</label>
+                        <input id="nom" name="nom" autocomplete="name" maxlength="100" required>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="email">Votre e-mail <small>(facultatif)</small></label>
+                        <input id="email" name="email" type="email" autocomplete="email" maxlength="150">
+                    </div>
+
+                    <fieldset>
+                        <legend>Type de souvenir</legend>
+                        <div class="memory-types" role="radiogroup">
+                            <label><input name="memory-type" type="radio" value="texte" checked> Texte</label>
+                            <label><input name="memory-type" type="radio" value="photo"> Photo</label>
+                            <label><input name="memory-type" type="radio" value="audio"> Audio</label>
+                            <label><input name="memory-type" type="radio" value="video"> Vidéo</label>
+                        </div>
+                    </fieldset>
+
+                    <div id="text-panel" class="memory-panel">
+                        <label for="contenu">Votre message</label>
+                        <textarea id="contenu" name="contenu" rows="7" maxlength="5000"></textarea>
+                    </div>
+
+                    <div id="photo-panel" class="memory-panel" hidden>
+                        <label for="photos">Choisissez vos photos</label>
+                        <input id="photos" name="photos[]" type="file" accept="image/jpeg,image/png,image/webp" multiple>
+                        <p>Jusqu'à 10 photos de 5 Mo chacune.</p>
+                        <div id="photo-preview" aria-live="polite"></div>
+                    </div>
+
+                    <div id="audio-panel" class="memory-panel" hidden>
+                        <p>Enregistrez un message vocal de 2 minutes maximum.</p>
+                        <button id="start-audio" type="button">Démarrer l'enregistrement</button>
+                        <button id="stop-audio" type="button" hidden>Arrêter</button>
+                        <p id="audio-timer" aria-live="polite">02:00</p>
+                        <audio id="audio-preview" controls hidden></audio>
+                    </div>
+
+                    <div id="video-panel" class="memory-panel" hidden>
+                        <p>Enregistrez une vidéo de 60 secondes maximum.</p>
+                        <video id="video-live-preview" autoplay muted playsinline hidden></video>
+                        <button id="start-video" type="button">Démarrer la vidéo</button>
+                        <button id="stop-video" type="button" hidden>Arrêter</button>
+                        <p id="video-timer" aria-live="polite">01:00</p>
+                        <video id="video-preview" controls playsinline hidden></video>
+                    </div>
+
+                    <div id="upload-progress" hidden>
+                        <label for="upload-progress-bar">Envoi en cours</label>
+                        <progress id="upload-progress-bar" max="100" value="0">0 %</progress>
+                        <span id="upload-progress-value">0 %</span>
+                    </div>
+
+                    <button id="submit-contribution" type="submit">Envoyer mon souvenir</button>
+                </form>
+            </section>
+
+            <section id="success-message" hidden>
+                <h2>Merci pour votre message !</h2>
+                <p>Votre souvenir a bien été ajouté au livre d'or.</p>
+                <button id="new-contribution" type="button">Laisser un autre message</button>
+            </section>
+
+            <section id="invalid-event" hidden>
+                <h1>Lien indisponible</h1>
+                <p>Ce livre d'or n'existe pas ou n'accepte plus de souvenirs.</p>
+            </section>
+        </main>
+
+        <script src="assets/js/theme.js"></script>
+        <script src="assets/js/recorder.js"></script>
+        <script src="assets/js/contribuer.js"></script>
+    </body>
+</html>

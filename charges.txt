@@ -1,0 +1,466 @@
+# Cahier des charges — Livre d'Or Numérique (EventMemo)
+
+## 1. Présentation du projet
+
+### 1.1 Contexte
+Lors d'événements prestigieux (mariages, galas, conférences, inaugurations...), les hôtes mettent à disposition un livre d'or physique où les invités laissent un message. Le projet consiste à digitaliser cet usage : une plateforme web permettant à des **agents événementiels** (organisateurs) de créer des événements, de générer un lien/QR code d'accès, et de collecter les souvenirs (messages, éventuellement photos) laissés par leurs invités, le tout consultable depuis un dashboard.
+
+### 1.2 Objectif
+Fournir un outil simple, rapide et élégant pour :
+- créer et gérer plusieurs événements ;
+- collecter des souvenirs texte (et media en option) via un lien public, sans que l'invité n'ait besoin de créer de compte ;
+- consulter, filtrer et trier les souvenirs collectés ;
+- offrir une expérience visuelle soignée avec mode clair/sombre.
+
+### 1.3 Stack technique
+- **Frontend** : HTML5 / CSS3 / JavaScript vanilla
+- **Backend** : PHP (API interne, pas de framework imposé)
+- **Communication** : le frontend ne contient que des pages HTML statiques ; toute donnée dynamique transite via des appels **fetch()** (AJAX) vers des endpoints PHP qui répondent en **JSON**
+- **Base de données** : MySQL/MariaDB
+
+### 1.4 Principe d'architecture
+```
+[Page HTML] --fetch()--> [api/xxx.php] --requête SQL--> [Base de données]
+                                <--JSON--
+[Page HTML] <--JS injecte le DOM--
+```
+Aucune donnée n'est générée côté PHP dans le HTML (pas de `<?php echo ?>` mélangé aux pages). Chaque page HTML est un « conteneur » vide que le JS remplit après avoir interrogé l'API. Cela permet une séparation stricte frontend/backend.
+
+---
+
+## 2. Modèle de données
+
+Le schéma à 3 tables (`user`, `event`, `souvenir`) est insuffisant : il manque une notion **d'invité (guest)** distincte de l'utilisateur (l'organisateur), une table de liaison pour savoir qui a participé à quel événement, et une gestion des liens/QR codes d'accès. Voici le schéma complet proposé :
+
+### 2.1 `users` (les organisateurs / agents événementiels)
+| Champ | Type | Description |
+|---|---|---|
+| id | INT PK AI | |
+| nom | VARCHAR(100) | |
+| email | VARCHAR(150) UNIQUE | |
+| mot_de_passe | VARCHAR(255) | haché (password_hash) |
+| telephone | VARCHAR(20) UNIQUE | format international, ex: +229XXXXXXXX (requis pour l'OTP et l'envoi WhatsApp) |
+| telephone_verifie | BOOLEAN DEFAULT FALSE | passe à TRUE une fois l'OTP validé |
+| avatar | VARCHAR(255) NULL | optionnel |
+| date_creation | DATETIME | |
+
+### 2.2 `events`
+| Champ | Type | Description |
+|---|---|---|
+| id | INT PK AI | |
+| user_id | INT FK → users.id | organisateur |
+| nom | VARCHAR(150) | |
+| description | TEXT NULL | |
+| date_evenement | DATE | |
+| lieu | VARCHAR(150) NULL | |
+| token_acces | VARCHAR(64) UNIQUE | chaîne aléatoire utilisée dans le lien public et le QR code |
+| statut | ENUM('actif','clos') | permet de fermer la collecte après l'événement |
+| date_creation | DATETIME | |
+
+### 2.3 `guests` (les invités — nouveauté indispensable)
+| Champ | Type | Description |
+|---|---|---|
+| id | INT PK AI | |
+| nom | VARCHAR(100) | |
+| email | VARCHAR(150) NULL | optionnel, sert à identifier un invité récurrent |
+| date_creation | DATETIME | |
+
+> Séparer `guests` de `souvenirs` permet de compter le **nombre de personnes distinctes** ayant laissé un souvenir (ta stat dashboard), et de reconnaître un invité qui participerait à plusieurs événements du même organisateur.
+
+### 2.4 `event_guest` (table de liaison, qui a participé à quel événement)
+| Champ | Type | Description |
+|---|---|---|
+| id | INT PK AI | |
+| event_id | INT FK → events.id | |
+| guest_id | INT FK → guests.id | |
+| date_participation | DATETIME | |
+
+### 2.5 `souvenirs`
+| Champ | Type | Description |
+|---|---|---|
+| id | INT PK AI | |
+| event_id | INT FK → events.id | |
+| guest_id | INT FK → guests.id | |
+| contenu | TEXT | le message laissé |
+| media_url | VARCHAR(255) NULL | photo jointe (optionnel, v2) |
+| date_creation | DATETIME | |
+
+### 2.6 `otp_codes` (vérification du numéro + mot de passe oublié)
+| Champ | Type | Description |
+|---|---|---|
+| id | INT PK AI | |
+| user_id | INT FK → users.id | |
+| code | VARCHAR(6) | code à 6 chiffres généré aléatoirement |
+| type | ENUM('inscription','reset_password') | distingue le contexte (vérif. numéro vs mot de passe oublié) |
+| expire_a | DATETIME | ex: +5 minutes après génération |
+| utilise | BOOLEAN DEFAULT FALSE | passe à TRUE une fois consommé |
+| date_creation | DATETIME | |
+
+> Le même mécanisme d'envoi WhatsApp sert donc à deux choses : vérifier le numéro à l'inscription, et réinitialiser le mot de passe — inutile de mettre en place l'envoi d'email pour ça.
+
+### 2.7 `plans` (offres tarifaires — vide au départ, activable plus tard)
+| Champ | Type | Description |
+|---|---|---|
+| id | INT PK AI | |
+| nom | VARCHAR(50) | ex: « Gratuit », « Pro » |
+| prix | DECIMAL(10,2) | 0 pour le plan gratuit par défaut |
+| nb_evenements_max | INT NULL | NULL = illimité |
+| nb_souvenirs_max_par_event | INT NULL | NULL = illimité |
+| description | TEXT NULL | |
+| actif | BOOLEAN DEFAULT TRUE | permet de désactiver une offre sans la supprimer |
+
+### 2.8 `transactions` (historique des paiements — prête même sans moyen de paiement branché)
+| Champ | Type | Description |
+|---|---|---|
+| id | INT PK AI | |
+| user_id | INT FK → users.id | |
+| plan_id | INT FK → plans.id | |
+| montant | DECIMAL(10,2) | |
+| moyen_paiement | VARCHAR(50) NULL | ex: 'fedapay', 'kkiapay', 'stripe' — rempli seulement à l'intégration réelle |
+| reference_externe | VARCHAR(100) NULL | id de transaction renvoyé par la passerelle de paiement |
+| statut | ENUM('en_attente','reussi','echoue') | |
+| date_creation | DATETIME | |
+
+> `users.plan_id` (FK → `plans.id`, avec un plan « Gratuit » par défaut à l'inscription) + `users.plan_expire_le` (DATETIME NULL) permettent de savoir quel accès a chaque organisateur, indépendamment du fait qu'un vrai paiement soit branché ou non. Au départ tu peux simplement changer `plan_id` d'un utilisateur à la main en base ; le jour où tu branches un vrai moyen de paiement, c'est le webhook de la passerelle qui fera cette mise à jour automatiquement — aucune autre partie du code n'a besoin de changer.
+
+---
+
+## 3. Fonctionnalités par page
+
+### 3.1 Page Inscription / Connexion (`register.html`, `login.html`, `verify-otp.html`)
+- Formulaire nom / email / téléphone / mot de passe → `POST api/auth/register.php`
+- Le compte est créé avec `telephone_verifie = FALSE`, un code OTP à 6 chiffres est généré (`type = 'inscription'`) et envoyé par WhatsApp (voir §5.4)
+- Redirection vers `verify-otp.html` : l'utilisateur saisit le code reçu → `POST api/auth/verify-otp.php` → si correct, `telephone_verifie` passe à `TRUE` et une session démarre
+- Connexion email/téléphone + mot de passe → `POST api/auth/login.php` → refuse la connexion si `telephone_verifie = FALSE` (redirige vers la vérification)
+- Validation JS côté client (champs requis, format email/téléphone) **et** validation PHP côté serveur (ne jamais faire confiance au frontend)
+
+### 3.1bis Mot de passe oublié (`forgot-password.html`, `reset-password.html`)
+- L'utilisateur saisit son email ou son téléphone → `POST api/auth/forgot-password.php`
+- Un OTP (`type = 'reset_password'`) est généré et envoyé par WhatsApp au numéro enregistré
+- L'utilisateur saisit le code + son nouveau mot de passe → `POST api/auth/reset-password.php` : si le code est valide et non expiré (5 min), non déjà utilisé, alors on met à jour `mot_de_passe` (haché) et on marque le code `utilise = TRUE`
+- Toujours répondre de façon neutre si l'email/téléphone n'existe pas (« si ce compte existe, un code a été envoyé ») pour éviter de révéler quels numéros sont enregistrés
+
+### 3.2 Dashboard (`dashboard.html`)
+Statistiques à afficher (récupérées via `GET api/dashboard/stats.php`) :
+- Nombre total de souvenirs reçus
+- Nombre de personnes distinctes ayant laissé un souvenir (`COUNT DISTINCT guest_id`)
+- Nombre d'événements organisés
+- Éventuellement : un graphique simple (souvenirs par événement) ou les 5 derniers souvenirs reçus
+
+### 3.3 Page Événements (`events.html`)
+- Liste des événements de l'utilisateur connecté (`GET api/events/list.php`)
+- Formulaire de création d'événement (`POST api/events/create.php`) → à la création, génère un `token_acces` unique (ex: via `bin2hex(random_bytes(16))`)
+- Juste après la création, le backend envoie automatiquement le lien public + le QR code (image générée côté serveur, voir §5.4) sur le WhatsApp de l'organisateur, au numéro `telephone` vérifié de son compte
+- Pour chaque événement : affichage du lien public généré (`https://tondomaine.com/contribuer.html?token=xxxx`) + génération du QR code correspondant à l'écran (voir §5.3)
+- Actions : clore un événement, voir ses souvenirs, supprimer/modifier, renvoyer le lien par WhatsApp manuellement (bouton « Renvoyer sur WhatsApp »)
+
+### 3.4 Page publique de contribution (`contribuer.html`) — accessible aux invités, sans compte
+- Récupère le `token` dans l'URL, vérifie sa validité via `GET api/events/verify.php?token=xxxx`
+- Formulaire simple : nom (+ email optionnel) + message
+- Soumission → `POST api/souvenirs/create.php` : crée le `guest` s'il n'existe pas encore (ou le retrouve par email), crée l'entrée `event_guest` si absente, puis crée le `souvenir`
+- Message de confirmation après envoi
+
+### 3.5 Page Souvenirs (`souvenirs.html`)
+- Liste paginée des souvenirs (`GET api/souvenirs/list.php`)
+- Filtres : par événement (dropdown), tri (date croissante/décroissante, alphabétique par nom d'invité)
+- Chaque souvenir affiche : nom de l'invité, contenu, date, événement associé
+
+### 3.6 Page Profil / Paramètres (`profil.html`)
+- Modifier nom / email / mot de passe
+- Choix du thème (clair/sombre), sauvegardé en `localStorage` + éventuellement en base pour persister sur plusieurs appareils
+
+---
+
+## 4. Dark mode / Light mode
+
+Approche recommandée :
+- Définir les couleurs via des **variables CSS** (`:root { --bg: #fff; --text: #111; }` et `[data-theme="dark"] { --bg: #111; --text: #eee; }`)
+- Un bouton toggle en JS bascule l'attribut `data-theme` sur `<html>` et sauvegarde le choix dans `localStorage`
+- Au chargement de chaque page, un petit script lit `localStorage` et applique le thème **avant** l'affichage (pour éviter un flash de couleur claire)
+
+---
+
+## 5. Aide technique : structure des appels API
+
+### 5.1 Convention générale
+- Chaque endpoint PHP renvoie du JSON avec un format homogène :
+```json
+{ "success": true, "data": { ... } }
+{ "success": false, "message": "Erreur : ..." }
+```
+- Toujours définir `header('Content-Type: application/json');` en haut de chaque fichier PHP d'API
+
+### 5.2 Exemple : récupérer les statistiques du dashboard
+
+**Frontend (`js/dashboard.js`)**
+```javascript
+async function chargerStats() {
+  try {
+    const reponse = await fetch('api/dashboard/stats.php', {
+      method: 'GET',
+      credentials: 'include' // envoie le cookie de session PHP
+    });
+    const resultat = await reponse.json();
+
+    if (resultat.success) {
+      document.querySelector('#nb-souvenirs').textContent = resultat.data.nb_souvenirs;
+      document.querySelector('#nb-invites').textContent = resultat.data.nb_invites;
+      document.querySelector('#nb-evenements').textContent = resultat.data.nb_evenements;
+    } else {
+      console.error(resultat.message);
+    }
+  } catch (erreur) {
+    console.error('Erreur réseau :', erreur);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', chargerStats);
+```
+
+**Backend (`api/dashboard/stats.php`)**
+```php
+<?php
+session_start();
+header('Content-Type: application/json');
+require_once '../db.php';
+
+if (!isset($_SESSION['user_id'])) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'message' => 'Non connecté']);
+    exit;
+}
+
+$userId = $_SESSION['user_id'];
+
+$stmt = $pdo->prepare("SELECT COUNT(*) FROM events WHERE user_id = ?");
+$stmt->execute([$userId]);
+$nbEvenements = $stmt->fetchColumn();
+
+$stmt = $pdo->prepare("
+    SELECT COUNT(s.id) FROM souvenirs s
+    JOIN events e ON s.event_id = e.id
+    WHERE e.user_id = ?
+");
+$stmt->execute([$userId]);
+$nbSouvenirs = $stmt->fetchColumn();
+
+$stmt = $pdo->prepare("
+    SELECT COUNT(DISTINCT s.guest_id) FROM souvenirs s
+    JOIN events e ON s.event_id = e.id
+    WHERE e.user_id = ?
+");
+$stmt->execute([$userId]);
+$nbInvites = $stmt->fetchColumn();
+
+echo json_encode([
+    'success' => true,
+    'data' => [
+        'nb_evenements' => (int)$nbEvenements,
+        'nb_souvenirs' => (int)$nbSouvenirs,
+        'nb_invites' => (int)$nbInvites,
+    ]
+]);
+```
+
+Ce couple frontend/backend est le modèle à reproduire pour chaque fonctionnalité (création d'événement, envoi d'un souvenir, liste filtrée...).
+
+### 5.3 Génération de QR code
+Utilise une librairie JS légère comme **qrcode.js** (CDN) pour générer le QR code côté client à partir du lien public — pas besoin de PHP pour ça :
+```html
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+  new QRCode(document.getElementById("qrcode"), "https://tondomaine.com/contribuer.html?token=" + token);
+</script>
+```
+
+### 5.4 Envoi de l'OTP et du QR code par WhatsApp
+
+Envoyer un message WhatsApp depuis un script PHP nécessite obligatoirement de passer par une API tierce (il n'existe pas de fonction PHP native pour ça). Trois options, à choisir selon tes contraintes :
+
+| Option | Avantages | Inconvénients |
+|---|---|---|
+| **WhatsApp Cloud API (Meta, officielle)** | Gratuite en usage modéré, fiable, faite pour la prod | Nécessite un compte Meta Business, une vérification d'entreprise, et une configuration un peu longue |
+| **Twilio (API WhatsApp)** | SDK PHP simple, sandbox de test gratuite en quelques minutes, bonne doc | Payant au-delà du sandbox, sandbox limité à des numéros pré-approuvés |
+| **Librairies non-officielles (ex: whatsapp-web.js)** | Rapide à tester, pas de compte Business requis | Pas en PHP (Node.js), viole les CGU de WhatsApp, risque de bannissement du numéro — à éviter pour un projet destiné à des vrais clients |
+
+Pour un projet étudiant/prototype, **Twilio sandbox** est le plus simple à mettre en place rapidement. Exemple d'appel côté PHP :
+
+```php
+<?php
+// api/notifications/send-whatsapp.php
+require_once '../../vendor/autoload.php'; // via composer require twilio/sdk
+use Twilio\Rest\Client;
+
+function envoyerWhatsapp(string $numeroDestinataire, string $message): bool {
+    $sid = 'TON_ACCOUNT_SID';
+    $token = 'TON_AUTH_TOKEN';
+    $client = new Client($sid, $token);
+
+    try {
+        $client->messages->create(
+            "whatsapp:$numeroDestinataire",
+            [
+                "from" => "whatsapp:+14155238886", // numéro sandbox Twilio
+                "body" => $message
+            ]
+        );
+        return true;
+    } catch (Exception $e) {
+        error_log("Erreur WhatsApp : " . $e->getMessage());
+        return false;
+    }
+}
+```
+
+Utilisation dans `register.php` (envoi de l'OTP) :
+```php
+$code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+// ... insertion en base dans otp_codes avec type = 'inscription' et expire_a = +5 min
+envoyerWhatsapp($telephone, "Ton code de vérification EventMemo est : $code (valable 5 minutes)");
+```
+
+Pour le QR code envoyé en pièce jointe (et pas juste un lien texte), il faut le générer **côté serveur** cette fois (pas en JS comme pour l'affichage écran) avec une librairie PHP comme `endroid/qr-code`, l'enregistrer temporairement comme image, puis l'envoyer via l'API media de Twilio/Meta.
+
+### 5.6 Architecture prête pour un futur moyen de paiement
+
+L'idée : ne **jamais** appeler directement l'API d'une passerelle de paiement (FedaPay, Kkiapay, Stripe...) depuis tes contrôleurs métier. Passe systématiquement par une petite interface PHP que tu pourras implémenter plus tard sans toucher au reste du code.
+
+```php
+// api/payments/PaymentGatewayInterface.php
+interface PaymentGatewayInterface {
+    public function initierPaiement(int $userId, int $planId, float $montant): array; // renvoie une URL de paiement ou un token
+    public function verifierTransaction(string $referenceExterne): string; // renvoie 'reussi', 'echoue' ou 'en_attente'
+}
+```
+
+Aujourd'hui, tu peux créer une implémentation « factice » (`FakeGateway.php`) qui simule un paiement toujours réussi, pour développer et tester tout le reste du flux (upgrade de plan, limites appliquées, page facturation) sans dépendre d'un vrai compte marchand. Le jour où tu es prêt à intégrer un vrai moyen de paiement, tu crées `FedapayGateway.php` (ou `KkiapayGateway.php`, `StripeGateway.php`) qui implémente la même interface, et tu changes une seule ligne (l'instanciation de la classe) dans `api/payments/create.php`.
+
+Pistes pour le choix de la passerelle, vu ton contexte (Bénin) :
+- **FedaPay** ou **Kkiapay** : passerelles ouest-africaines, gèrent Mobile Money (MTN, Moov) + carte bancaire, bien adaptées à une clientèle locale
+- **Stripe** : plus international, mais ne prend pas nativement en charge le Mobile Money local
+
+Ce choix n'a aucun impact sur le reste de l'architecture tant que tu passes par l'interface ci-dessus.
+
+**Endpoints à prévoir dès maintenant (même avec la fausse passerelle) :**
+- `POST api/payments/create.php` : crée une ligne `transactions` (`statut = 'en_attente'`), appelle `initierPaiement()`, renvoie l'URL/token au frontend
+- `POST api/payments/webhook.php` : endpoint appelé par la passerelle pour confirmer un paiement (à sécuriser par une signature une fois branché) → met à jour `transactions.statut` et `users.plan_id` / `plan_expire_le`
+- `GET api/payments/history.php` : historique des transactions de l'utilisateur (page facturation)
+
+**Pages à prévoir dans l'interface :** `tarifs.html` (présentation des plans) et une section « Abonnement » dans `profil.html` (plan actuel, date d'expiration, historique de facturation, bouton « Passer au plan Pro » — désactivé/masqué tant qu'aucune passerelle réelle n'est branchée).
+
+---
+
+## 6. Sécurité — points à ne pas négliger
+
+### 5.5 Sécurité liée à l'OTP
+- Limiter à 5 tentatives de code par heure par utilisateur (anti brute-force)
+- Toujours vérifier `expire_a > NOW()` et `utilise = FALSE` avant de valider un code
+- Invalider (marquer `utilise = TRUE`) tout ancien OTP non utilisé quand un nouveau est généré pour le même `user_id` et le même `type`
+- Ne jamais renvoyer le code lui-même dans la réponse JSON de `forgot-password.php` (uniquement un message de confirmation d'envoi)
+
+- **Mots de passe** : toujours `password_hash()` / `password_verify()`, jamais en clair
+- **Requêtes préparées PDO** (comme dans l'exemple ci-dessus) pour éviter les injections SQL
+- **Échappement HTML** des souvenirs affichés (`htmlspecialchars()`) pour éviter les failles XSS, vu que le contenu vient d'utilisateurs non authentifiés
+- **Validation serveur** systématique en plus de la validation JS (champs vides, longueur du message, format email)
+- **Protection CSRF** sur les formulaires de connexion/création (token CSRF en session)
+- **Rate limiting** simple sur la page de contribution publique pour éviter le spam (ex: limiter à X souvenirs par IP par événement)
+- Vérifier que `token_acces` n'est pas devinable (chaîne aléatoire suffisamment longue)
+- **Webhook de paiement** : une fois une vraie passerelle branchée, toujours vérifier la signature de la requête entrante avant de modifier `plan_id` (sinon n'importe qui peut s'auto-attribuer un plan payant en appelant l'URL du webhook)
+
+---
+
+## 7. Liste des tâches (roadmap)
+
+### Phase 1 — Fondations
+- [ ] Mettre en place la base de données (script SQL avec les 6 tables)
+- [ ] Créer la connexion PDO (`api/db.php`)
+- [ ] Système d'inscription/connexion + sessions PHP
+- [ ] Créer un compte Twilio (sandbox WhatsApp) ou Meta Cloud API + tester un envoi simple
+- [ ] Flux OTP à l'inscription (génération, envoi WhatsApp, vérification)
+- [ ] Flux mot de passe oublié (OTP par WhatsApp + réinitialisation)
+- [ ] Structure des pages HTML (squelette + navigation)
+- [ ] Mise en place des variables CSS + toggle dark/light mode
+
+### Phase 2 — Cœur fonctionnel
+- [ ] CRUD événements (créer, lister, clore, supprimer)
+- [ ] Génération lien + QR code (affichage écran en JS + génération image côté PHP pour l'envoi WhatsApp)
+- [ ] Envoi automatique du lien/QR code par WhatsApp à la création d'un événement
+- [ ] Page publique de contribution (`contribuer.html`) + endpoint de création de souvenir
+- [ ] Page souvenirs avec filtres et tri
+- [ ] Dashboard avec statistiques
+
+### Phase 3 — Finitions
+- [ ] Page profil / paramètres
+- [ ] Sécurisation (CSRF, rate limiting, échappement XSS)
+- [ ] Responsive design (mobile-first, vu que les invités scanneront un QR code depuis leur téléphone)
+- [ ] Tests manuels sur les différents parcours (organisateur / invité)
+
+### Phase 4 — Améliorations futures (optionnel)
+- [ ] Upload de photos avec les souvenirs
+- [ ] Export PDF du livre d'or d'un événement
+- [ ] Notification email à l'organisateur à chaque nouveau souvenir
+- [ ] Statistiques avancées (graphiques d'évolution)
+
+### Phase 5 — Monétisation (quand tu seras prêt)
+- [ ] Créer les tables `plans` et `transactions` + plan « Gratuit » par défaut
+- [ ] Créer `PaymentGatewayInterface` + une implémentation factice (`FakeGateway`) pour tout tester sans vrai compte marchand
+- [ ] Page `tarifs.html` + section abonnement dans `profil.html`
+- [ ] Appliquer les limites du plan (ex: nombre d'événements max) dans `api/events/create.php`
+- [ ] Le jour venu : créer un compte FedaPay/Kkiapay/Stripe et implémenter la vraie classe (`FedapayGateway`, etc.) + sécuriser le webhook
+
+---
+
+## 8. Arborescence de fichiers suggérée
+
+```
+/
+├── index.html
+├── login.html
+├── register.html
+├── verify-otp.html
+├── forgot-password.html
+├── reset-password.html
+├── dashboard.html
+├── events.html
+├── souvenirs.html
+├── profil.html
+├── tarifs.html
+├── contribuer.html
+├── css/
+│   ├── style.css
+│   └── theme.css
+├── js/
+│   ├── auth.js
+│   ├── otp.js
+│   ├── dashboard.js
+│   ├── events.js
+│   ├── souvenirs.js
+│   ├── contribuer.js
+│   └── theme.js
+└── api/
+    ├── db.php
+    ├── auth/
+    │   ├── register.php
+    │   ├── verify-otp.php
+    │   ├── login.php
+    │   ├── forgot-password.php
+    │   ├── reset-password.php
+    │   └── logout.php
+    ├── notifications/
+    │   └── send-whatsapp.php
+    ├── payments/
+    │   ├── PaymentGatewayInterface.php
+    │   ├── FakeGateway.php
+    │   ├── create.php
+    │   ├── webhook.php
+    │   └── history.php
+    ├── events/
+    │   ├── create.php
+    │   ├── list.php
+    │   └── verify.php
+    ├── souvenirs/
+    │   ├── create.php
+    │   └── list.php
+    └── dashboard/
+        └── stats.php
+```

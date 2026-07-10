@@ -96,4 +96,4 @@ Ce projet est distribué sous licence MIT — voir le fichier [`LICENSE`](./LICE
 
 ## 👤 Auteur
 
-Vianney — étudiant en informatique à l'Université d'Abomey-Calavi (UAC), Cotonou, Bénin.
+Vianney — étudiant en informatique à l'Ecole Spérieure de Gestion, d'Informatique et de Sciences (ESGIS), Cotonou, Bénin.

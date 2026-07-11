@@ -13,6 +13,7 @@
     </head>
     <body>
         <main>
+            <!-- En-tête minimal de la page publique accessible sans compte. -->
             <header class="public-header">
                 <a href="index.html" aria-label="Accueil Memora">Memora</a>
                 <button class="theme-toggle" type="button" aria-label="Changer de thème">
@@ -20,12 +21,14 @@
                 </button>
             </header>
 
+            <!-- Informations injectées après validation du token d'événement. -->
             <section id="event-intro">
                 <p>Bienvenue dans le livre d'or de</p>
                 <h1 id="event-name">Chargement…</h1>
                 <p id="event-description"></p>
             </section>
 
+            <!-- Formulaire masqué tant que l'événement n'est pas validé. -->
             <section id="contribution-section" hidden>
                 <h2>Laissez votre souvenir</h2>
                 <p id="form-message" role="alert" hidden></p>
@@ -92,6 +95,7 @@
                 </form>
             </section>
 
+            <!-- États affichés après envoi réussi ou si le lien est indisponible. -->
             <section id="success-message" hidden>
                 <h2>Merci pour votre message !</h2>
                 <p>Votre souvenir a bien été ajouté au livre d'or.</p>
@@ -104,6 +108,7 @@
             </section>
         </main>
 
+        <!-- Thème, enregistrement média et envoi du souvenir. -->
         <script src="assets/js/theme.js"></script>
         <script src="assets/js/recorder.js"></script>
         <script src="assets/js/contribuer.js"></script>

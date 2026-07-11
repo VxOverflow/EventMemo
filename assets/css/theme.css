@@ -1,3 +1,4 @@
+/* Variables de couleur du thème clair, utilisées dans toute l'interface. */
 :root {
   --bg: #faf8f3;
   --surface: #ffffff;
@@ -13,6 +14,7 @@
   --shadow: 0 14px 35px rgba(44, 62, 80, .09);
 }
 
+/* Les mêmes variables sont redéfinies pour le thème sombre. */
 [data-theme="dark"] {
   --bg: #14161a;
   --surface: #1e2126;

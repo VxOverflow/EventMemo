@@ -1,9 +1,11 @@
+// Contrôle le parcours public : validation de l'événement, capture et envoi du souvenir.
 (() => {
     const token = new URLSearchParams(window.location.search).get('token');
     const recorder = new MediaRecorderController();
     let audioBlob = null;
     let videoBlob = null;
 
+    // Références centralisées aux éléments manipulés par le script.
     const elements = {
         contribution: document.querySelector('#contribution-section'),
         invalidEvent: document.querySelector('#invalid-event'),
@@ -106,6 +108,7 @@
         });
     }
 
+    // Utilise XMLHttpRequest afin d'afficher la progression d'envoi des médias.
     function upload(formData) {
         return new Promise((resolve, reject) => {
             const request = new XMLHttpRequest();
@@ -136,6 +139,7 @@
         });
     }
 
+    // Valide le type de souvenir choisi, puis transmet les données à l'API.
     async function submitContribution(event) {
         event.preventDefault();
         elements.message.hidden = true;
@@ -191,6 +195,7 @@
         }
     }
 
+    // Vérifie le token d'URL avant de rendre le formulaire accessible.
     async function loadEvent() {
         if (!token) {
             elements.invalidEvent.hidden = false;

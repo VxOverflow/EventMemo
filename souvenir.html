@@ -8,6 +8,7 @@
     <title>Souvenirs — Memora</title>
   </head>
   <body>
+    <!-- Navigation de l'espace organisateur. -->
     <header>
       <a href="dashboard.html">Memora</a>
       <nav>
@@ -19,6 +20,7 @@
       </nav>
     </header>
     <main>
+      <!-- Les filtres déterminent la liste chargée par souvenirs.js. -->
       <h1>Souvenirs</h1>
       <form id="filters-form">
         <label for="event-filter">Événement</label
@@ -37,6 +39,7 @@
       </section>
       <nav id="pagination" aria-label="Pagination"></nav>
     </main>
+    <!-- Modèle cloné pour afficher un souvenir renvoyé par l'API. -->
     <template id="souvenir-template"
       ><article class="souvenir-card">
         <h2 class="guest-name"></h2>
@@ -44,6 +47,7 @@
         <p class="souvenir-event"></p>
         <blockquote class="souvenir-content"></blockquote></article
     ></template>
+    <!-- Scripts de thème et de filtrage / pagination des souvenirs. -->
     <script src="assets/js/theme.js"></script>
     <script src="assets/js/souvenirs.js"></script>
   </body>

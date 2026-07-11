@@ -1,3 +1,4 @@
+// Encapsule l'accès micro/caméra et la création des fichiers audio ou vidéo.
 class MediaRecorderController {
     constructor() {
         this.mediaRecorder = null;
@@ -6,6 +7,7 @@ class MediaRecorderController {
         this.stopTimer = null;
     }
 
+    // Démarre la capture et actualise le minuteur jusqu'à la durée maximale.
     async start(type, maximumDuration, onTick) {
         this.stopStream();
 
@@ -49,6 +51,7 @@ class MediaRecorderController {
         return this.stream;
     }
 
+    // Arrête la capture et renvoie le média final sous forme de Blob.
     stop() {
         return new Promise((resolve) => {
             if (!this.mediaRecorder || this.mediaRecorder.state === 'inactive') {

@@ -13,7 +13,7 @@
       <a href="index.html">Memora</a>
       <h1>Créer un compte</h1>
       <p id="form-message" role="alert" hidden></p>
-      <form id="register-form" action="" method="post">
+      <form id="form-register" action="" method="post">
         <label for="nom">Nom complet</label
         ><input
           id="nom"
@@ -45,11 +45,21 @@
           autocomplete="new-password"
           minlength="8"
           required
-        /><button type="submit">Créer mon compte</button>
+        />
+        <label for="mot_de_passe">Confirmer le mot de passe</label>
+        <input
+          id="confirm-mot_de_passe"
+          name="confirm-mot_de_passe  "
+          type="password"
+          autocomplete="new-password"
+          minlength="8"
+          required
+        />
+        <button type="submit">Créer mon compte</button>
       </form>
       <p>Déjà inscrit ? <a href="login.html">Se connecter</a></p>
     </main>
     <!-- Le script valide et transmet les données d'inscription à l'API. -->
-    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/auth.js" defer></script>
   </body>
 </html>

@@ -25,26 +25,30 @@ function initLoginForm() {
 }
 
 
-function initRegisterForm() {
+ function initRegisterForm() {
   const form = document.getElementById("form-register");
   if (!form) return;
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const nom = document.getElementById("reg-nom").value.trim();
-    const prenom = document.getElementById("reg-prenom").value.trim();
-    const email = document.getElementById("reg-email").value.trim();
-    const mot_de_passe = document.getElementById("reg-password").value;
-    const confirmation = document.getElementById("reg-password-confirm").value;
+    const nom = document.getElementById("nom").value.trim();
+    const prenom = document.getElementById("prenom").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const tel = document.getElementById("telephone").value.trim();
+    const mot_de_passe = document.getElementById("mot-de-passe").value;
+    const confirmation = document.getElementById("confirm-mot-de-passe").value;
 
-    const res = await apiFetch("/auth/register.php", {
+    const res = await apiFetch("../../api/auth/register.php", {
       method: "POST",
-      body: { nom, prenom, email, mot_de_passe, confirmation },
+      body: { nom, prenom, email, tel, mot_de_passe, confirmation },
     });
 
     if (res.success) {
+      console.log("erreur");
+
       showFormMsg("register-msg", res.message + " Redirection...", "success");
-      setTimeout(() => (window.location.href = "connexion.html"), 1500);
+      setTimeout(() => (window.location.href = "login.html"), 1500);
     } else {
+      console.log("erreur");
       showFormMsg("register-msg", res.message, "error");
     }
   });

@@ -17,6 +17,7 @@ try {
             PDO::ATTR_EMULATE_PREPARES => false,
         ]
     );
+    echo "connexion reussie";
 } catch (PDOException $exception) {
     http_response_code(500);
     header('Content-Type: application/json; charset=utf-8');
@@ -24,5 +25,7 @@ try {
         'success' => false,
         'message' => 'Connexion à la base de données indisponible.',
     ]);
+    echo "connexion echouee";
+    
     exit;
 }

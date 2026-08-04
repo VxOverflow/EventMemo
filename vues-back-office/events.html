@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../assets/css/theme.css" />
-    <link rel="stylesheet" href="../assets/css/style.css" />
-    <title>Tableau de bord — Memora</title>
+    <title>Evenements -- Memora</title>
 </head>
 <body>
     <header>
@@ -18,21 +16,13 @@
       </nav>
     </header>
     <main>
-      <h1>Tableau de bord</h1>
-      <p>Bienvenue dans l'espace administrateur de Memora.</p>
-      <section>
-        <h2>Statistiques</h2>
-        <p>Nombre d'événements : <span id="event-count">0</span></p>
-        <p>Nombre d'utilisateurs : <span id="user-count">0</span></p>
-        <p>Nombre de messages : <span id="message-count">0</span></p>
-        <p>Nombre de messages signalés : <span id="reported-message-count">0</span></p>
-
-
-        <p>
-            Ajouter un compte administrateur
-            <button>➕</button>
-        </p>
-      </section>
+       <div>
+         <input type="text" placeholder="Rechercher un événement" class="search" />
+         <button id="tri">Trier par nombre de messages</button>
+       </div>
+       <h1>Tous les évenements</h1>
+        <section id="show-events">
+        </section>
     </main>
     <footer>
       <a href="mailto:contact@livredesouvenirs.fr"><img src="../assets//images/mail.webp" alt="Email" class="logo"></a>
@@ -43,9 +33,7 @@
       <br>
       &copy; 2026 Memora
     </footer>
-
     <script src="../assets/js/admin.js"></script>
     <script src="../assets/js/theme.js"></script>
-
-  </body>
+</body>
 </html>
